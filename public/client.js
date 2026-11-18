@@ -758,12 +758,12 @@ function onState(msg) {
   }
   if (view.phase !== "lobby") autoSat = false;
 
-  // "play again" with computers: re-add them one per update, then start the round
+  // "play again" with computers: re-add them one per update, then wait in the lobby for "start"
   if (replay && view.phase === "lobby" && meIn?.name && replay.sent !== view.seq) {
     replay.sent = view.seq;
     const bots = view.players.filter((p) => p.bot).length;
     if (bots < replay.bots && view.players.length < 4) act({ type: "addBot" });
-    else { replay = null; act({ type: "start" }); }
+    else replay = null;
   }
   if (replay && view.phase === "playing") replay = null;
 
