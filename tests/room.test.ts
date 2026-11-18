@@ -384,3 +384,28 @@ describe("untrusted input", () => {
     s.ws.close();
   });
 });
+
+describe("online count", () => {
+  const beat = async (id?: string) => {
+    const res = await SELF.fetch(`https://game.test/api/online${id ? `?id=${id}` : ""}`);
+    expect(res.status).toBe(200);
+    return ((await res.json()) as { online: number }).online;
+  };
+
+  it("counts each visitor once, however often they beat", async () => {
+    const before = await beat();
+    expect(await beat("visitor-a")).toBe(before + 1);
+    expect(await beat("visitor-a")).toBe(before + 1);
+    expect(await beat("visitor-b")).toBe(before + 2);
+  });
+
+  it("ignores ids that are not plain labels", async () => {
+    const before = await beat();
+    expect(await beat(encodeURIComponent("<script>"))).toBe(before);
+  });
+
+  it("is not reachable as a game room", async () => {
+    const res = await SELF.fetch("https://game.test/ws/presence:all", { headers: { Upgrade: "websocket" } });
+    expect(res.status).toBe(400);
+  });
+});

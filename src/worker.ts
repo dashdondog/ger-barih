@@ -25,9 +25,22 @@ const WS_PREFIX = "/ws";
 const ROOM_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const DEFAULT_ROOM = "main";
 
+/**
+ * `/api/online?id=<playerId>` — a visitor's heartbeat, answered with how many
+ * visitors are online across every room. It is counted by one shared Room
+ * instance whose name can never match ROOM_RE, so no player can open it as a room.
+ */
+const ONLINE_PATH = "/api/online";
+const PRESENCE_NAME = "presence:all";
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === ONLINE_PATH) {
+      const presence = env.ROOMS.get(env.ROOMS.idFromName(PRESENCE_NAME));
+      return presence.fetch(new Request(`https://presence/online${url.search}`));
+    }
 
     if (url.pathname === WS_PREFIX || url.pathname.startsWith(WS_PREFIX + "/")) {
       // Reject non-upgrade traffic here rather than paying for a DO wake-up.

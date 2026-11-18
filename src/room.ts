@@ -135,7 +135,21 @@ const META = resolveMeta(logic.meta);
 const PING = "__ping";
 const PONG = "__pong";
 
+/** A visitor counts as online this long after their last heartbeat (the client beats every 20 s). */
+export const ONLINE_WINDOW_MS = 45_000;
+/** Bounds the presence map, so a flood of made-up ids cannot grow it without limit. */
+const MAX_TRACKED = 10_000;
+const VISITOR_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
 export class Room extends DurableObject<Env> {
+  /**
+   * Only used by the one presence instance (see worker.ts): visitorId -> last
+   * heartbeat. Deliberately in memory, the one exception to the rule above: it
+   * is a live count, heartbeats keep the instance awake, and if it is evicted
+   * anyway the count rebuilds itself within one heartbeat.
+   */
+  private seen = new Map<string, number>();
+
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     // Registered on every construction (cheap, idempotent) rather than on first
@@ -216,6 +230,8 @@ export class Room extends DurableObject<Env> {
    * error, so it fails loudly rather than quietly serving something.
    */
   override async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === "/online") return this.online(url.searchParams.get("id"));
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("expected a websocket upgrade", { status: 426 });
     }
@@ -228,6 +244,18 @@ export class Room extends DurableObject<Env> {
     // The connId must survive eviction — the socket carries it.
     server.serializeAttachment({ connId });
     return new Response(null, { status: 101, webSocket: pair[0] });
+  }
+
+  /** Record one heartbeat (when `id` is valid) and report how many visitors are online. */
+  private online(id: string | null): Response {
+    const now = Date.now();
+    for (const [visitor, at] of this.seen) {
+      if (now - at > ONLINE_WINDOW_MS) this.seen.delete(visitor);
+    }
+    if (id && VISITOR_RE.test(id) && (this.seen.has(id) || this.seen.size < MAX_TRACKED)) {
+      this.seen.set(id, now);
+    }
+    return Response.json({ online: this.seen.size }, { headers: { "Cache-Control": "no-store" } });
   }
 
   private connIdOf(ws: WebSocket): string | undefined {
