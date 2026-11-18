@@ -236,12 +236,44 @@
         .rules li { font-size: 13px; }
         .field input { font-size: 16px; } /* 16px keeps iOS from zooming into the field */
       }
+      /* intro: the title over a ger that raises itself */
+      .intro { position: fixed; inset: 0; z-index: 15; display: flex; align-items: center; padding: 32px clamp(20px, 6vw, 88px); background: linear-gradient(90deg, rgba(251, 246, 234, 0.94) 0%, rgba(251, 246, 234, 0.8) 34%, rgba(251, 246, 234, 0) 62%); transition: opacity 0.5s ease; }
+      .intro[hidden] { display: none; }
+      .intro.leaving { opacity: 0; pointer-events: none; }
+      .intro-copy { width: min(480px, 100%); }
+      .intro-copy > * { animation: intro-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      .intro-copy > :nth-child(2) { animation-delay: 0.08s; }
+      .intro-copy > :nth-child(3) { animation-delay: 0.16s; }
+      .intro-copy > :nth-child(4) { animation-delay: 0.24s; }
+      .intro-copy > :nth-child(5) { animation-delay: 0.32s; }
+      @keyframes intro-in { from { opacity: 0; transform: translateY(14px); } }
+      .intro-kicker { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wood); }
+      .intro h1 { margin: 10px 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(60px, 9vw, 104px); line-height: 0.95; letter-spacing: 0.03em; text-transform: uppercase; }
+      .intro h1 span { color: var(--wood); }
+      .intro-lead { margin: 16px 0 0; font-size: 17px; line-height: 1.6; color: var(--ink-soft); }
+      .intro-facts { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+      .intro-facts li { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
+      .intro-facts .ico { color: var(--khadag); }
+      .intro-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+      .intro-play { padding: 15px 28px; font-size: 17px; background: var(--wood); color: #fff; box-shadow: 0 10px 24px rgba(200, 80, 46, 0.3); }
+      .intro-help { padding: 15px 22px; font-size: 15px; background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line); }
+      body.intro-on .hud:not(#top), body.intro-on #top .brand { visibility: hidden; }
+      @media (max-width: 640px) {
+        .intro { align-items: flex-end; padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); background: linear-gradient(0deg, rgba(251, 246, 234, 0.97) 0%, rgba(251, 246, 234, 0.9) 52%, rgba(251, 246, 234, 0) 72%); }
+        .intro-lead { font-size: 15px; margin-top: 10px; }
+        .intro-facts { margin-top: 12px; gap: 6px; }
+        .intro-facts li { font-size: 14px; }
+        .intro-actions { margin-top: 18px; }
+        .intro-play { flex: 1.3; justify-content: center; }
+        .intro-help { flex: 1; justify-content: center; padding: 15px 12px; font-size: 14px; white-space: nowrap; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { transition: none !important; animation: none !important; }
       }
     </style>
   </head>
-  <body>
+  <body class="intro-on">
     <!-- one icon set for the whole HUD: stroke icons that take the text colour -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol>
@@ -301,6 +333,23 @@
     </section>
 
     <div id="toast" class="hud" role="status" aria-live="polite"></div>
+
+    <div id="intro" class="intro" role="dialog" aria-labelledby="intro-title">
+      <div class="intro-copy">
+        <p class="intro-kicker"><svg class="ico" aria-hidden="true"><use href="#i-ger" /></svg>Монгол гэрийн 3D карт тоглоом</p>
+        <h1 id="intro-title">Гэр <span>барих</span></h1>
+        <p class="intro-lead">Найзуудтайгаа уралдаж монгол гэрээ хаалганаас бүслүүр хүртэл жинхэнэ дарааллаар нь бос. Хамгийн түрүүнд дуусгасан нь ялна.</p>
+        <ul class="intro-facts">
+          <li><svg class="ico" aria-hidden="true"><use href="#i-bot" /></svg>2–4 тоглогч эсвэл компьютертэй</li>
+          <li><svg class="ico" aria-hidden="true"><use href="#i-timer" /></svg>Ээлж бүр 15 секунд</li>
+          <li><svg class="ico" aria-hidden="true"><use href="#i-link" /></svg>Татах, бүртгүүлэх шаардлагагүй</li>
+        </ul>
+        <div class="intro-actions">
+          <button class="btn intro-play" type="button" id="intro-play">Тоглох<svg class="ico" aria-hidden="true"><use href="#i-next" /></svg></button>
+          <button class="btn intro-help" type="button" id="intro-help"><svg class="ico" aria-hidden="true"><use href="#i-book" /></svg>Хэрхэн тоглох</button>
+        </div>
+      </div>
+    </div>
 
     <div id="lobby" class="overlay" hidden>
       <div class="sheet panel" role="dialog" aria-labelledby="lobby-title">

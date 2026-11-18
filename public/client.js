@@ -637,6 +637,70 @@ function setBuilt(site, n, animate) {
   site.shown = n;
 }
 
+// ── intro: a ger raises itself, away from the play area, while the title is up ──
+
+const INTRO_AT = new THREE.Vector3(0, 0, 16);
+const intro = { on: true, site: null };
+controls.enabled = false;
+{
+  const root = new THREE.Group();
+  root.position.copy(INTRO_AT);
+  const floor = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.35, R + 0.42, 0.08, 32), M.floor);
+  floor.position.y = -0.03;
+  floor.receiveShadow = true;
+  root.add(floor);
+  const parts = buildParts();
+  for (const p of parts) {
+    p.visible = reduced;
+    p.userData.base = p.position.clone();
+    root.add(p);
+  }
+  scene.add(root);
+  intro.site = { root, parts };
+  if (!reduced) parts.forEach((_, i) => setTimeout(() => intro.on && placePart(intro.site, i), 700 + i * 360));
+}
+
+/** Frame the intro ger beside the title (landscape) or above it (portrait). */
+function introView(w, h) {
+  const portrait = w < h;
+  camera.fov = portrait ? 40 : 34;
+  camera.setViewOffset(w, h, portrait ? 0 : -w * 0.2, portrait ? h * 0.25 : 0, w, h);
+  camera.updateProjectionMatrix();
+}
+
+function introFrame(now) {
+  const a = reduced ? 0.35 : now * 0.00012 + 0.35;
+  const far = tall ? 10.5 : 8;
+  camera.position.set(INTRO_AT.x + Math.sin(a) * far, tall ? 4 : 3, INTRO_AT.z + Math.cos(a) * far);
+  camera.lookAt(INTRO_AT.x, 0.8, INTRO_AT.z);
+}
+
+/** Leave the intro: glide the camera to the play area, then drop the showcase ger. */
+function leaveIntro(instant = false) {
+  if (!intro.on) return;
+  intro.on = false;
+  document.body.classList.remove("intro-on");
+  const box = $("#intro");
+  const from = camera.position.clone();
+  const fromLook = new THREE.Vector3(INTRO_AT.x, 0.85, INTRO_AT.z);
+  resize(); // sets the game camera and view offset
+  controls.enabled = true;
+  const to = camera.position.clone();
+  const toLook = controls.target.clone();
+  const drop = () => { scene.remove(intro.site.root); box.hidden = true; };
+  if (instant) { drop(); return; }
+  box.classList.add("leaving");
+  camera.position.copy(from);
+  controls.target.copy(fromLook);
+  tween(1100, (t) => {
+    const e = 1 - Math.pow(1 - t, 3);
+    camera.position.lerpVectors(from, to, e);
+    controls.target.lerpVectors(fromLook, toLook, e);
+  }, drop);
+  if (view) renderHud(lastMsg);
+  if (!localStorage.getItem("hf:ger:helpSeen")) setTimeout(openHelp, 700);
+}
+
 // ── frame loop ──────────────────────────────────────────────────────────────
 
 function resize() {
@@ -656,6 +720,7 @@ function resize() {
   // the hand panel covers the bottom of the screen; lift the scene above it
   camera.setViewOffset(w, h, 0, h * (portrait ? 0.17 : 0.12), w, h);
   camera.updateProjectionMatrix();
+  if (intro.on) { introView(w, h); return; }
   controls.update();
 }
 addEventListener("resize", resize);
@@ -692,7 +757,8 @@ renderer.setAnimationLoop((now) => {
   for (const site of sites.values()) {
     if (site.glow.visible) site.glow.material.emissiveIntensity = 0.35 + Math.sin(now / 280) * 0.25;
   }
-  controls.update();
+  if (intro.on) introFrame(now);
+  else controls.update();
   renderer.render(scene, camera);
 });
 
@@ -705,6 +771,7 @@ let selected = [];
 let stormPick = false;
 let autoSat = false;
 let replay = null; // {bots, sent}: computers to bring back after "play again"
+let lastMsg = null; // the latest state frame, to redraw the HUD when the intro closes
 let turnDeadline = null; // performance.now() when the current turn runs out
 let lastTick = null;
 
@@ -744,6 +811,10 @@ function onState(msg) {
   status = msg.status;
   view = msg.view;
   if (!view) return;
+  lastMsg = msg;
+  // back in a round that is still going (a reload): straight to the table
+  const mine = view.players.find((p) => p.id === ME);
+  if (intro.on && view.phase === "playing" && mine && mine.handCount + mine.built.length > 0) leaveIntro(true);
   const isNew = view.seq !== prevSeq;
   lastSeq = view.seq;
   turnDeadline = msg.turnEndsIn == null ? null : performance.now() + msg.turnEndsIn;
@@ -792,8 +863,8 @@ function renderHud(msg) {
   const inGame = phase !== "lobby" && Boolean(me) && me.handCount + me.built.length > 0;
 
   $("#round-label").textContent = phase === "lobby" ? "Лобби" : `Тоглолт ${view.round}`;
-  $("#lobby").hidden = phase !== "lobby";
-  $("#gameover").hidden = phase !== "done";
+  $("#lobby").hidden = phase !== "lobby" || intro.on;
+  $("#gameover").hidden = phase !== "done" || intro.on;
   $("#ladder").hidden = !inGame;
   $("#players").hidden = phase === "lobby";
   $("#bottom").hidden = !inGame || phase === "done";
@@ -1031,7 +1102,10 @@ $("#help-close").addEventListener("click", closeHelp);
 $("#help-ok").addEventListener("click", closeHelp);
 help.addEventListener("click", (e) => { if (e.target === help) closeHelp(); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !help.hidden) closeHelp(); });
-if (!localStorage.getItem("hf:ger:helpSeen")) openHelp();
+// the intro: "Play" glides to the table (and shows the rules once on a first visit)
+$("#intro-play").addEventListener("click", () => { ctx(); leaveIntro(); });
+$("#intro-help").addEventListener("click", openHelp);
+$("#intro-play").focus();
 
 // keyboard: 1-5 select, Enter place, S swap, E end
 addEventListener("keydown", (e) => {
