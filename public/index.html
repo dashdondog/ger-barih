@@ -41,6 +41,7 @@
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; overflow: hidden; background: var(--sky); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
       button { font: inherit; color: inherit; }
+      .ico { width: 1.2em; height: 1.2em; flex: none; vertical-align: -0.22em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
       #scene { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
       .hud { position: fixed; z-index: 5; }
       .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(42, 33, 24, 0.12); backdrop-filter: blur(8px); }
@@ -115,7 +116,7 @@
       #hint { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--ink-soft); min-height: 1.4em; }
 
       /* toast */
-      #toast { top: 84px; left: 50%; transform: translate(-50%, -8px); padding: 10px 18px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 700; font-size: 14px; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none; max-width: calc(100% - 40px); text-align: center; }
+      #toast { top: 84px; left: 50%; transform: translate(-50%, -8px); padding: 10px 18px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 700; font-size: 14px; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none; max-width: calc(100% - 40px); text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
       #toast.on { opacity: 1; transform: translate(-50%, 0); }
       #toast.err { background: #b23a2a; }
 
@@ -129,7 +130,7 @@
       .rules { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 8px; }
       .rules li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; font-size: 14px; line-height: 1.45; }
       .rules img, .rule-ico { width: 34px; height: 34px; border-radius: 8px; }
-      .rule-ico { display: grid; place-items: center; background: #fff3d6; font-size: 18px; }
+      .rule-ico { display: grid; place-items: center; background: #fff3d6; color: var(--wood); font-size: 18px; }
       .field { display: flex; gap: 8px; }
       .field input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font: 600 15px var(--font-body); color: var(--ink); }
       .field input:focus { outline: 3px solid var(--khadag); outline-offset: 1px; }
@@ -143,13 +144,16 @@
       .sheet .btn-bot:disabled { opacity: 0.5; cursor: not-allowed; }
       .seated li .bot-remove { margin-left: auto; border: 0; background: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; }
       .note { margin: 10px 0 0; font-size: 12px; color: var(--ink-soft); text-align: center; }
-      .win-ger { font-size: 64px; text-align: center; margin: 0; }
+      .win-ger { font-size: 64px; text-align: center; margin: 0; color: var(--wood); line-height: 1; }
+      .win-ger .ico { stroke-width: 1.5; }
 
       .link-btn { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--khadag); font-weight: 700; font-size: 14px; text-decoration: underline; cursor: pointer; }
       .help { z-index: 30; }
       .help-sheet { position: relative; width: min(640px, 100%); }
       .help-sheet section { margin-top: 18px; }
-      .help-sheet h3 { margin: 0 0 8px; font-size: 16px; }
+      .help-sheet h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 16px; }
+      .help-sheet h3 .ico { color: var(--wood); }
+      .help-close { display: grid; place-items: center; }
       .help-sheet p, .help-list li { font-size: 14px; line-height: 1.55; }
       .help-sheet p { margin: 0; }
       .help-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -232,6 +236,27 @@
     </style>
   </head>
   <body>
+    <!-- one icon set for the whole HUD: stroke icons that take the text colour -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a10 10 0 0 1 0 14" /></symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z" /><path d="m22 9-6 6" /><path d="m16 9 6 6" /></symbol>
+      <symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="3" /><path d="M12 8V4" /><circle cx="12" cy="3" r="1" /><path d="M9 13v2" /><path d="M15 13v2" /></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z" /><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" /></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M9 2h6" /></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+      <symbol id="i-ger" viewBox="0 0 24 24"><path d="M2 20h20" /><path d="M4 20v-6c0-4 3.6-7 8-7s8 3 8 7v6" /><path d="M10 20v-4h4v4" /><path d="M10 7.3 12 4l2 3.3" /><path d="M4 14h16" /></symbol>
+      <symbol id="i-storm" viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3" /><path d="M3 12h16a3 3 0 1 1-3 3" /><path d="M3 16h7" /></symbol>
+      <symbol id="i-swap" viewBox="0 0 24 24"><path d="m17 3 4 4-4 4" /><path d="M21 7H8" /><path d="m7 21-4-4 4-4" /><path d="M3 17h13" /></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4" /><path d="M4 4h12l-2 4 2 4H4" /></symbol>
+      <symbol id="i-door" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1" /><path d="M14.5 12h.01" /><path d="M3 21h18" /></symbol>
+      <symbol id="i-turn" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15" /><path d="m7 22-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></symbol>
+      <symbol id="i-tip" viewBox="0 0 24 24"><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z" /></symbol>
+      <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m5 3 14 7-6 2-2 6z" /></symbol>
+    </svg>
+
     <canvas id="scene" aria-label="Гэрүүдийн 3D дүр зураг"></canvas>
 
     <header id="top" class="hud">
@@ -240,9 +265,9 @@
         <div><b>Гэр барих</b><small id="round-label">Лобби</small></div>
       </div>
       <div class="top-actions">
-        <button class="chip" id="help-open" type="button" aria-haspopup="dialog">❓ <span class="label">Заавар</span></button>
-        <button class="chip" id="copy-link" type="button" aria-label="Урилгын линк хуулах">🔗 <span class="label">Найзаа урих</span></button>
-        <button class="chip" id="sound" type="button" aria-pressed="true" aria-label="Дуу">🔊</button>
+        <button class="chip" id="help-open" type="button" aria-haspopup="dialog"><svg class="ico" aria-hidden="true"><use href="#i-help" /></svg><span class="label">Заавар</span></button>
+        <button class="chip" id="copy-link" type="button" aria-label="Урилгын линк хуулах"><svg class="ico" aria-hidden="true"><use href="#i-link" /></svg><span class="label">Найзаа урих</span></button>
+        <button class="chip" id="sound" type="button" aria-pressed="true" aria-label="Дуу"><svg class="ico" aria-hidden="true"><use href="#i-sound" /></svg></button>
       </div>
     </header>
 
@@ -278,7 +303,7 @@
           <li><img src="/assets/cards/door.webp" alt="" /> <span><b>Хэсэг тавих:</b> дараагийн хэрэгтэй хэсгийн карт гартаа байвал тавина. Дараалсан хэсгүүдийг нэг ээлжиндээ олныг тавьж болно.</span></li>
           <li><img src="/assets/cards/storm.webp" alt="" /> <span><b>Шуурга:</b> өрсөлдөгчийн хамгийн сүүлд тавьсан бүрээсийг (эсгий, гадар, бүслүүр) хийсгэнэ.</span></li>
           <li><img src="/assets/cards/uni.webp" alt="" /> <span><b>Солих:</b> хэрэггүй 1-3 картаа хаяад шинээр авна. Шуурга, солих хоёр ээлжийг дуусгана.</span></li>
-          <li><span class="rule-ico" aria-hidden="true">⏱</span> <span><b>15 секунд:</b> ээлж бүрт 15 секунд байна. Хугацаа дуусвал ээлж дараагийн тоглогчид шилжинэ.</span></li>
+          <li><span class="rule-ico" aria-hidden="true"><svg class="ico"><use href="#i-timer" /></svg></span> <span><b>15 секунд:</b> ээлж бүрт 15 секунд байна. Хугацаа дуусвал ээлж дараагийн тоглогчид шилжинэ.</span></li>
         </ul>
         <form class="field" id="name-form">
           <input id="name-input" maxlength="16" autocomplete="nickname" placeholder="Таны нэр" aria-label="Таны нэр" required />
@@ -286,16 +311,16 @@
         </form>
         <ul class="seated" id="seated-list"></ul>
         <div class="share"><code id="share-url"></code><button class="chip" type="button" id="share-copy">Хуулах</button></div>
-        <button class="btn btn-bot" type="button" id="add-bot">🤖 Компьютертэй тоглох</button>
+        <button class="btn btn-bot" type="button" id="add-bot"><svg class="ico" aria-hidden="true"><use href="#i-bot" /></svg>Компьютертэй тоглох</button>
         <button class="btn btn-start" type="button" id="start" disabled>Тоглолт эхлүүлэх</button>
-        <button class="link-btn" type="button" id="help-from-lobby">📖 Дэлгэрэнгүй заавар унших</button>
+        <button class="link-btn" type="button" id="help-from-lobby"><svg class="ico" aria-hidden="true"><use href="#i-book" /></svg> Дэлгэрэнгүй заавар унших</button>
         <p class="note" id="lobby-note"></p>
       </div>
     </div>
 
     <div id="gameover" class="overlay" hidden>
       <div class="sheet panel" role="dialog" aria-labelledby="over-title">
-        <p class="win-ger" aria-hidden="true">🏕️</p>
+        <p class="win-ger" aria-hidden="true"><svg class="ico"><use href="#i-ger" /></svg></p>
         <h1 id="over-title"></h1>
         <p class="lead" id="over-text"></p>
         <button class="btn btn-start" type="button" id="again">Дахин тоглох</button>
@@ -304,11 +329,11 @@
 
     <div id="help" class="overlay help" hidden>
       <div class="sheet panel help-sheet" role="dialog" aria-modal="true" aria-labelledby="help-title">
-        <button class="help-close" type="button" id="help-close" aria-label="Хаах">✕</button>
+        <button class="help-close" type="button" id="help-close" aria-label="Хаах"><svg class="ico" aria-hidden="true"><use href="#i-close" /></svg></button>
         <h1 id="help-title">Хэрхэн <span>тоглох</span> вэ</h1>
 
         <section>
-          <h3>🎯 Зорилго</h3>
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-flag" /></svg>Зорилго</h3>
           <p>Тоглогч бүр өөрийн хашаанд монгол гэр барина. Гэрээ <b>11 алхмаар, жинхэнэ дарааллаар нь</b> хамгийн түрүүнд бүрэн барьсан хүн ялна.</p>
           <ol class="help-steps">
             <li><img src="/assets/cards/door.webp" alt="" />Хаалга</li>
@@ -323,27 +348,27 @@
         </section>
 
         <section>
-          <h3>🚪 Тоглоом эхлүүлэх</h3>
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-door" /></svg>Тоглоом эхлүүлэх</h3>
           <ol class="help-list">
             <li>Нэрээ оруулаад <b>Суух</b> дарна.</li>
-            <li><b>🔗 Найзаа урих</b> товчоор өрөөний линкээ хуулж 1-3 найздаа илгээнэ.</li>
+            <li><b><svg class="ico" aria-hidden="true"><use href="#i-link" /></svg> Найзаа урих</b> товчоор өрөөний линкээ хуулж 1-3 найздаа илгээнэ.</li>
             <li>Бүгд нэрээ оруулсны дараа хэн ч <b>Тоглолт эхлүүлэх</b>-ийг дарж болно.</li>
             <li>Тоглогч бүр <b>5 карттай</b> эхэлнэ. Ээлжээр тоглоно.</li>
           </ol>
         </section>
 
         <section>
-          <h3>🔁 Таны ээлж</h3>
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-turn" /></svg>Таны ээлж</h3>
           <div class="help-moves">
             <div><img src="/assets/cards/khana.webp" alt="" /><b>Хэсэг тавих</b><p>Дараагийн хэрэгтэй хэсгийн карт гартаа байвал сонгоод <b>Тавих</b> дарна. Тохирох карт <span class="glow">шараар гэрэлтэнэ</span>. Тавьсны дараа ээлж <b>дуусахгүй</b>: дараагийн хэсэг ч гартаа байвал үргэлжлүүлэн тавина. Болсон бол <b>Ээлж дуусгах</b>.</p></div>
             <div><img src="/assets/cards/storm.webp" alt="" /><b>Шуурга илгээх</b><p>Шуурганы картаа сонгоод өрсөлдөгчөө сонгоно. Тэдний <b>хамгийн сүүлд тавьсан бүрээс</b> (эсгий, гадар, бүслүүр) хийсч, дахин тавих шаардлагатай болно. Хүрээ (хаалга, хана, тооно, багана, унь) хийсдэггүй. Ээлжийг дуусгана.</p></div>
             <div><img src="/assets/cards/uni.webp" alt="" /><b>Карт солих</b><p>Хэрэггүй <b>1-3 картаа</b> сонгоод <b>Солих</b> дарвал шинээр авна. Ээлжийг дуусгана.</p></div>
           </div>
-          <p style="margin-top: 10px">⏱ Ээлж бүрт <b>15 секунд</b> байна. Хугацаа дуусахад хэсэг тавьсан бол ээлж зүгээр дуусна; юу ч тавиагүй бол хэрэггүй картууд чинь автоматаар солигдоно.</p>
+          <p style="margin-top: 10px"><svg class="ico" aria-hidden="true"><use href="#i-timer" /></svg> Ээлж бүрт <b>15 секунд</b> байна. Хугацаа дуусахад хэсэг тавьсан бол ээлж зүгээр дуусна; юу ч тавиагүй бол хэрэггүй картууд чинь автоматаар солигдоно.</p>
         </section>
 
         <section>
-          <h3>💡 Зөвлөгөө</h3>
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-tip" /></svg>Зөвлөгөө</h3>
           <ul class="help-list">
             <li>Удахгүй хэрэг болох картаа (жишээ нь хана тавих гэж байхад тооно) <b>хадгал</b>, дараалуулан нэг дор тавина.</li>
             <li>Шуургаа тэргүүлж байгаа тоглогч бүрээсээ тавьсан үед ашигла.</li>
@@ -352,7 +377,7 @@
         </section>
 
         <section>
-          <h3>🖱 Удирдлага</h3>
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-pointer" /></svg>Удирдлага</h3>
           <ul class="help-list">
             <li><b>3D дүр зураг:</b> чирж эргүүлнэ, хулганы дугуйгаар (утсанд хоёр хуруугаар) ойртуулна.</li>
             <li><b>Гар:</b> <kbd>1</kbd>-<kbd>5</kbd> карт сонгох, <kbd>Enter</kbd> тавих, <kbd>S</kbd> солих, <kbd>E</kbd> ээлж дуусгах.</li>

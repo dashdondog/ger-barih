@@ -99,10 +99,32 @@ const el = (tag, cls, text) => {
   return n;
 };
 
+/** An icon from the sprite in index.html, coloured by the surrounding text. */
+const icon = (name) => {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "ico");
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", `#i-${name}`);
+  svg.append(use);
+  return svg;
+};
+
+/** A button with a leading icon (or a trailing one when `after` is set). */
+const iconButton = (cls, name, text, after = false) => {
+  const b = el("button", cls);
+  b.type = "button";
+  const label = document.createTextNode(text);
+  if (after) b.append(label, icon(name));
+  else b.append(icon(name), label);
+  return b;
+};
+
 let toastTimer = 0;
-function toast(text, isError = false) {
+function toast(text, isError = false, iconName = null) {
   const t = $("#toast");
   t.textContent = text;
+  if (iconName) t.prepend(icon(iconName));
   t.classList.toggle("err", isError);
   t.classList.add("on");
   clearTimeout(toastTimer);
@@ -128,7 +150,7 @@ let audio = null;
 let soundOn = localStorage.getItem("hf:ger:sound") !== "off";
 const soundBtn = $("#sound");
 const paintSound = () => {
-  soundBtn.textContent = soundOn ? "🔊" : "🔇";
+  soundBtn.replaceChildren(icon(soundOn ? "sound" : "mute"));
   soundBtn.setAttribute("aria-pressed", String(soundOn));
 };
 paintSound();
@@ -729,13 +751,13 @@ function onState(msg) {
     const e = view.last;
     const who = e.by === ME ? "Та" : nameOf(e.by);
     if (e.kind === "place") { sfx.place(); toast(`${who} ${PART[e.part].name.toLowerCase()} тавилаа`); }
-    else if (e.kind === "storm") { sfx.storm(); toast(`🌪 ${who} шуурга илгээв! ${e.target === ME ? "Таны" : nameOf(e.target) + "-ийн"} ${PART[e.part].name.toLowerCase()} хийслээ`); }
+    else if (e.kind === "storm") { sfx.storm(); toast(`${who} шуурга илгээв! ${e.target === ME ? "Таны" : nameOf(e.target) + "-ийн"} ${PART[e.part].name.toLowerCase()} хийслээ`, false, "storm"); }
     else if (e.kind === "swap") { sfx.swap(); toast(`${who} ${e.count} карт солив`); }
     else if (e.kind === "start") toast("Тоглолт эхэллээ! Хаалгаа босгоорой");
     if (view.yourTurn && e.by !== ME && (e.kind === "storm" || e.kind === "swap" || e.kind === "end" || e.kind === "timeout")) sfx.turn();
     // a timeout can be followed by a computer's move in the same update, so it has its own slot
     const t = view.lastTimeout;
-    if (t && t.seq > prevSeq) { sfx.swap(); toast(`⏱ ${t.by === ME ? "Таны" : nameOf(t.by) + "-ийн"} хугацаа дууслаа${t.count ? `, ${t.count} карт солигдлоо` : ""}`); }
+    if (t && t.seq > prevSeq) { sfx.swap(); toast(`${t.by === ME ? "Таны" : nameOf(t.by) + "-ийн"} хугацаа дууслаа${t.count ? `, ${t.count} карт солигдлоо` : ""}`, false, "timer"); }
   }
   if (isNew) { selected = []; stormPick = false; }
 
@@ -779,8 +801,9 @@ function renderLobby(msg) {
     li.append(dot, document.createTextNode(p.name || "Нэр оруулаагүй"));
     if (p.id === ME) li.append(el("em", null, "(та)"));
     if (p.bot) {
-      const rm = el("button", "bot-remove", "✕");
+      const rm = el("button", "bot-remove");
       rm.type = "button";
+      rm.append(icon("close"));
       rm.setAttribute("aria-label", `${p.name} хасах`);
       rm.addEventListener("click", () => act({ type: "removeBot", id: p.id }));
       li.append(rm);
@@ -910,8 +933,7 @@ function renderActions(me, need) {
   if (!view.yourTurn) return;
 
   const one = selected.length === 1 ? view.yourHand[selected[0]] : null;
-  const place = el("button", "btn btn-place", "🏗 Тавих");
-  place.type = "button";
+  const place = iconButton("btn btn-place", "ger", "Тавих");
   place.disabled = one !== need;
   place.addEventListener("click", () => act({ type: "place", card: selected[0] }));
   box.append(place);
@@ -920,8 +942,7 @@ function renderActions(me, need) {
     const targets = view.players.filter((p) => p.id !== ME && ["esgii", "gadar", "bus"].includes(p.built[p.built.length - 1]));
     if (targets.length) {
       for (const t of targets) {
-        const b = el("button", "btn btn-storm", `🌪 ${t.name}: ${PART[t.built[t.built.length - 1]].name}`);
-        b.type = "button";
+        const b = iconButton("btn btn-storm", "storm", `${t.name}: ${PART[t.built[t.built.length - 1]].name}`);
         b.addEventListener("click", () => act({ type: "storm", card: selected[0], target: t.id }));
         box.append(b);
       }
@@ -930,15 +951,13 @@ function renderActions(me, need) {
     }
   }
 
-  const swap = el("button", "btn btn-swap", selected.length ? `🔄 ${selected.length} карт солих` : "🔄 Солих");
-  swap.type = "button";
+  const swap = iconButton("btn btn-swap", "swap", selected.length ? `${selected.length} карт солих` : "Солих");
   swap.disabled = selected.length === 0;
   swap.addEventListener("click", () => act({ type: "swap", cards: [...selected] }));
   box.append(swap);
 
   if (view.placedThisTurn) {
-    const end = el("button", "btn btn-end", "Ээлж дуусгах ➜");
-    end.type = "button";
+    const end = iconButton("btn btn-end", "next", "Ээлж дуусгах", true);
     end.addEventListener("click", () => act({ type: "end" }));
     box.append(end);
   }
