@@ -1,0 +1,14 @@
+id,role,type,description,size/ratio,style line ref,source
+card-door,hand card + build ladder icon,ui,painted wooden ger door,1:1 (shown 112px),STYLE FORMULA v1,generate
+card-khana,hand card + build ladder icon,ui,folding lattice wall,1:1,STYLE FORMULA v1,generate
+card-toono,hand card + favicon,ui,round crown wheel,1:1,STYLE FORMULA v1,generate
+card-bagana,hand card,ui,two painted support pillars,1:1,STYLE FORMULA v1,generate
+card-uni,hand card,ui,bundle of roof poles,1:1,STYLE FORMULA v1,generate
+card-esgii,hand card,ui,rolled felt blanket,1:1,STYLE FORMULA v1,generate
+card-gadar,hand card,ui,folded white canvas cover,1:1,STYLE FORMULA v1,generate
+card-bus,hand card,ui,coiled horsehair ropes,1:1,STYLE FORMULA v1,generate
+card-storm,hand card (action),ui,steppe whirlwind,1:1,STYLE FORMULA v1,generate
+cover,og image + marketplace cover,background,four gers at different build stages on a steppe hill,3:2,STYLE FORMULA v1,generate
+ger-parts,3D build pieces (11 steps),procedural,three.js primitives: door / lattice / crown / pillars / poles / felt / canvas / ropes,in-scene,engine lighting from formula blocks 3-4,code
+terrain,3D ground + hills,procedural,low-poly steppe disc + instanced hills,in-scene,engine lighting from formula blocks 3-4,code
+sfx,place / storm / swap / turn / win,audio,WebAudio synthesised tones and filtered noise,-,-,code
